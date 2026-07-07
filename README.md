@@ -2,12 +2,10 @@
 
 **A shared to-do list for the people you live with. Put it on the fridge.**
 
-Fridge is a tiny, self-hosted shared task app modeled on analogue task cards. Each person writes in their own ink color. Three cards — **Now**, **Soon**, **Later** — keep today's tasks in front of you and everything else out of your head. No accounts, no tracking, no company between you and your grocery list: one passphrase opens your shared workspace from any device.
+Fridge is an open-source, self-hosted shared task app modeled on fridge whiteboards. Each person writes in their own ink color. Three cards — **Now**, **Soon**, **Later** — keep today's tasks in front of you and everything else out of your head. No accounts required, no tracking: one passphrase opens your shared workspace from any device.
 
-Built by a couple who wanted to break up with Google Keep.
+This project is inspired and influenced by movements of people breaking up with Google, and building their own self-hosted apps and functions. Feel free to fork the code and apply to your own VPS instance. 
 
-![Light mode](docs/screenshot-light.png)
-![Dark mode](docs/screenshot-dark.png)
 
 ## Why
 
@@ -18,12 +16,13 @@ Shared lists shouldn't require a Google account, and your household's errands sh
 - **Now** is a fresh dated card every day. Write the few things that matter; unfinished items carry to tomorrow's card automatically (marked ››). Past cards stay browsable.
 - **Soon** holds important tasks that aren't for today. Pull from it when filling your day.
 - **Later** collects ideas and aspirations so they stop taking up headspace.
-- Everyone in the workspace writes in their own ink; a filled circle and strikethrough show who checked an item off.
-- Checked items sink to the bottom of the card. "Clear" archives them — nothing is ever deleted.
-- Changes sync live between devices. There's a done log, CSV export, full JSON backup, light/dark themes, renameable cards, and a compact 3×5 popup window.
-- Works solo too — the second person is optional and can be added later.
 
-The card ritual is inspired by [Analog by Ugmonk](https://ugmonk.com/pages/analog); the palette comes from Sanzo Wada's *Dictionary of Color Combinations*. The reasoning behind every design decision is in [DESIGN.md](DESIGN.md).
+- Everyone in the workspace writes in their own ink, and has their own ink color; a filled circle and strikethrough show who checked an item off.
+- Checked items sink to the bottom of the card. "Clear" archives them, nothing is deleted.
+- Changes sync live between devices. There's a done log, CSV export, full JSON backup, light/dark themes, renameable cards, and a compact 3×5 popup window.
+- Works solo too, the second person is optional and can be added later.
+
+The reasoning behind the design decisions are documented in [DESIGN.md](DESIGN.md).
 
 ## Run it in 30 seconds
 
@@ -41,7 +40,7 @@ Options: `PORT=8080 node server.js`, `DATA_DIR=/somewhere node server.js`, `TZ=A
 
 ## The passphrase model
 
-There are no usernames. A passphrase *is* a workspace: typing it from any device opens that workspace. This is the whole login system, and it's the "key under the doormat" tradeoff — wonderfully simple, and exactly as strong as the phrase you choose. Use a full phrase ("tangerine bicycle whisper june"), not a word, especially on a server other people can reach. Creating a workspace with a passphrase that already exists is rejected, so workspaces can't collide.
+There are no usernames. A passphrase *is* a workspace: typing it from any device opens that workspace. This is the whole login system, and it's the "key under the doormat" tradeoff — wonderfully simple, and exactly as strong as the phrase you choose. Use a full phrase is recommended ("tangerine bicycle"), not a word, especially on a server other people can reach. Creating a workspace with a passphrase that already exists is rejected, so workspaces can't collide.
 
 ## Your data
 
