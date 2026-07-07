@@ -6,10 +6,12 @@ Fridge is an open-source, self-hosted shared task app modeled on fridge whiteboa
 
 This project is inspired and influenced by movements of people breaking up with Google, and building their own self-hosted apps and functions. Feel free to fork the code and apply to your own VPS instance. 
 
-
 ## Why
 
 Shared lists shouldn't require a Google account, and your household's errands shouldn't live in an ad company's cloud. Fridge is one Node file and one HTML file. Your data is plain JSON on a disk you control, readable in any text editor, exportable to CSV in one click.
+
+![Now Screenshot in Light Mode](now-light-screenshot.png)
+![Now Screenshot in Dark Mode](now-dark-screenshot.png)
 
 ## How it works
 
@@ -23,6 +25,9 @@ Shared lists shouldn't require a Google account, and your household's errands sh
 - Works solo too, the second person is optional and can be added later.
 
 The reasoning behind the design decisions are documented in [DESIGN.md](DESIGN.md).
+
+![Soon Screenshot](soon-screenshot.png)
+![Later Screenshot](later-screenshot.png)
 
 ## Run it in 30 seconds
 
