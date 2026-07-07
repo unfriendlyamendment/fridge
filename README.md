@@ -10,8 +10,8 @@ This project is inspired and influenced by movements of people breaking up with 
 
 Shared lists shouldn't require a Google account, and your household's errands shouldn't live in an ad company's cloud. Fridge is one Node file and one HTML file. Your data is plain JSON on a disk you control, readable in any text editor, exportable to CSV in one click.
 
-![Now Screenshot in Light Mode](now-light-screenshot.png)
-![Now Screenshot in Dark Mode](now-dark-screenshot.png)
+![Now Screenshot in Light Mode](assets/now-light-screenshot.png)
+![Now Screenshot in Dark Mode](assets/now-dark-screenshot.png)
 
 ## How it works
 
@@ -26,8 +26,8 @@ Shared lists shouldn't require a Google account, and your household's errands sh
 
 The reasoning behind the design decisions are documented in [DESIGN.md](DESIGN.md).
 
-![Soon Screenshot](soon-screenshot.png)
-![Later Screenshot](later-screenshot.png)
+![Soon Screenshot](assets/soon-screenshot.png)
+![Later Screenshot](assets/later-screenshot.png)
 
 ## Run it in 30 seconds
 
