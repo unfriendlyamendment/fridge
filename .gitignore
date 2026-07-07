@@ -1,0 +1,14 @@
+# User data — never commit anyone's lists, passphrases, or archives
+data/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# Local-only files
+*.local
+*.tmp

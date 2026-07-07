@@ -1,0 +1,27 @@
+{
+  "name": "fridge",
+  "version": "1.0.0",
+  "description": "A shared, self-hosted to-do list. Each person writes in their own ink. Now / Soon / Later cards modeled on an analogue task-card system.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "Hazel / Brownish Studio (https://brownish.studio)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unfriendlyamendment/fridge"
+  },
+  "keywords": [
+    "todo",
+    "self-hosted",
+    "shared-list",
+    "couples",
+    "analog",
+    "no-database",
+    "sse"
+  ]
+}

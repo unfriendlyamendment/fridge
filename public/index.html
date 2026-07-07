@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fridge</title>
+<style>
+  :root {
+    /* Avenir where available (all Apple devices), graceful fallbacks elsewhere */
+    --sans: "Avenir Next", Avenir, Futura, "Century Gothic", "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    /* Sanzo Wada palette */
+    --sw-blue-pale: #a7d4e4;   /* pale king's blue */
+    --sw-blue-deep: #40456a;   /* dusk blue */
+    --sw-yellow: #f5ecc2;      /* sulphur yellow */
+    --sw-tan: #c2ae93;
+    --accent: #006eb8;         /* king's blue */
+    /* per-card paper tints */
+    --paper-today: #fdfdfa;
+    --paper-next: var(--sw-yellow);
+    --paper-someday: var(--sw-blue-pale);
+    --paper: var(--paper-today);
+    --paper-edge: rgba(64, 69, 106, .18);
+    --rule: rgba(64, 69, 106, .18);
+    --ink: #2e3250;
+    --ink-faint: #8b91ad;
+    --bg: #eef4f6;
+    --shadow: 0 10px 30px rgba(64, 69, 106, .14), 0 2px 6px rgba(64, 69, 106, .10);
+    --circle: #7d84a6;
+  }
+  [data-theme="dark"] {
+    --paper-today: #40456a;
+    --paper-next: #3a3f60;
+    --paper-someday: #333853;
+    --paper-edge: rgba(255, 255, 255, .08);
+    --rule: rgba(167, 212, 228, .16);
+    --ink: #dfe7f2;
+    --ink-faint: #8a90b0;
+    --accent: #7dbde0;
+    --bg: #262a42;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .45), 0 2px 6px rgba(0, 0, 0, .35);
+    --circle: #767da3;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  ::selection { background: #f37f94; color: #2e3250; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    transition: background .3s;
+  }
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+  input { font: inherit; color: inherit; }
+
+  /* ---------- card ---------- */
+  .stage { width: 100%; max-width: 430px; }
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--paper-edge);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 0 0 30px;
+    position: relative;
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+    transition: background .3s;
+  }
+  .card[data-cardtab="today"]   { background: var(--paper-today); }
+  .card[data-cardtab="next"]    { background: var(--paper-next); }
+  .card[data-cardtab="someday"] { background: var(--paper-someday); }
+  /* corner dot cluster, like the printed ooo */
+  .card::after {
+    content: "\25CB \25CB \25CB";
+    position: absolute;
+    bottom: 10px; right: 16px;
+    font-size: 8px;
+    letter-spacing: 3px;
+    color: var(--circle);
+    opacity: .8;
+  }
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 18px 22px 8px 20px;
+  }
+  /* title sits at the right edge, like the printed card */
+  .card-title {
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: .01em;
+    color: var(--ink);
+    order: 10;
+  }
+  .card-date { font-size: 13px; color: var(--ink-faint); }
+  .card-clock { font-size: 11.5px; color: var(--ink-faint); opacity: .85; flex: 1; font-variant-numeric: tabular-nums; }
+  .head-btn { color: var(--ink-faint); font-size: 15px; padding: 2px 4px; }
+  .head-btn:hover { color: var(--ink); }
+  .nav-arrows { display: flex; gap: 2px; }
+  .nav-arrows button { color: var(--ink-faint); font-size: 15px; padding: 0 5px; }
+  .nav-arrows button:disabled { opacity: .25; cursor: default; }
+
+  .lines { flex: 1; padding: 4px 0; }
+  .line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 22px 0 20px;
+    min-height: 38px;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+  }
+  .line:last-child { border-bottom: 1px solid var(--rule); }
+
+  .circle {
+    width: 17px; height: 17px;
+    border-radius: 50%;
+    border: 1.4px solid var(--circle);
+    flex: none;
+    padding: 0;
+    position: relative;
+    transition: transform .12s;
+    overflow: hidden;
+  }
+  /* thin bisecting slash, like the printed signal circles */
+  .circle::after {
+    content: "";
+    position: absolute;
+    left: -3px; right: -3px; top: 50%;
+    border-top: 1px solid var(--circle);
+    transform: rotate(-45deg);
+  }
+  .circle:active { transform: scale(.85); }
+  .circle.done { border-color: transparent; }
+  .circle.done::after { display: none; }
+  .circle.ghost { opacity: .5; cursor: default; display: inline-block; }
+  .add-line .circle { border-style: solid; opacity: .7; }
+
+  .txt {
+    flex: 1;
+    font-size: 18px;
+    line-height: 1.35;
+    padding: 9px 0;
+    outline: none;
+    word-break: break-word;
+  }
+  .done .txt, .txt.struck { text-decoration: line-through; opacity: .55; }
+  .carried::after {
+    content: "\203A\203A";
+    color: var(--ink-faint);
+    font-size: 11px;
+    margin-left: 6px;
+    vertical-align: super;
+  }
+  .line-actions { display: flex; gap: 6px; opacity: 0; transition: opacity .15s; }
+  .line:hover .line-actions, .line:focus-within .line-actions { opacity: 1; }
+  .line-actions button { color: var(--ink-faint); font-size: 12px; padding: 2px 4px; }
+  .line-actions button:hover { color: var(--ink); }
+
+  .add-line input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 18px;
+    padding: 9px 0;
+    outline: none;
+  }
+  .add-line input::placeholder { color: var(--ink-faint); font-style: italic; opacity: .7; }
+  .add-line .circle { border-style: dashed; cursor: text; }
+
+  .done-divider {
+    padding: 10px 22px 2px;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .done-divider button {
+    font-size: 11px;
+    letter-spacing: .05em;
+    color: var(--ink-faint);
+    border: 1px solid var(--rule);
+    border-radius: 24px;
+    padding: 2px 12px;
+  }
+  .done-divider button:hover { color: var(--ink); border-color: var(--ink); }
+
+  /* ---------- tabs ---------- */
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  /* pill buttons, thin ink outline — like the swatch site */
+  .tabs button {
+    font-size: 14px;
+    letter-spacing: .02em;
+    color: var(--ink);
+    padding: 7px 18px;
+    border: 1px solid var(--ink);
+    border-radius: 24px;
+    background: transparent;
+    transition: background .15s, color .15s;
+  }
+  .tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  [data-theme="dark"] .tabs button.active { color: #262a42; }
+
+  .footer {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 14px;
+  }
+  .footer button { color: var(--ink-faint); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+  .footer button:hover { color: var(--ink); }
+
+  .offline {
+    position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+    background: #a33; color: #fff; font-size: 12px;
+    padding: 4px 14px; border-radius: 20px; display: none;
+  }
+
+  /* ---------- overlays (setup / login / who / settings) ---------- */
+  .overlay {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    z-index: 10;
+  }
+  .panel {
+    background: var(--paper);
+    border: 1px solid var(--paper-edge);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    width: 100%; max-width: 360px;
+    padding: 30px 28px;
+  }
+  .panel h1 { font-size: 21px; font-weight: 500; letter-spacing: .01em; margin-bottom: 6px; }
+  .panel p { font-size: 14.5px; color: var(--ink-faint); margin-bottom: 18px; }
+  .panel label { display: block; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin: 14px 0 4px; }
+  .panel input[type="text"], .panel input[type="password"] {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--rule);
+    background: transparent;
+    padding: 6px 0;
+    font-size: 17px;
+    outline: none;
+  }
+  .panel input[type="text"]:focus, .panel input[type="password"]:focus { border-bottom-color: var(--accent); }
+  .panel input[type="color"] {
+    width: 34px; height: 26px; border: none; background: none; padding: 0; cursor: pointer; vertical-align: middle;
+  }
+  .row { display: flex; gap: 12px; align-items: flex-end; }
+  .row > div { flex: 1; }
+  .panel .go {
+    margin-top: 26px;
+    width: 100%;
+    border: 1px solid var(--ink);
+    border-radius: 24px;
+    padding: 10px;
+    font-size: 15px;
+    letter-spacing: .02em;
+  }
+  .panel .go:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .panel .err { color: #a33; font-size: 13px; margin-top: 10px; font-style: italic; min-height: 18px; }
+  .who-btns { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+  .who-btns button {
+    border: 1px solid;
+    border-radius: 24px;
+    padding: 10px;
+    font-size: 16px;
+  }
+  .settings-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+  .settings-row input[type="text"] { flex: 1; }
+  .close-x { position: absolute; top: 12px; right: 16px; color: var(--ink-faint); font-size: 18px; }
+  .panel { position: relative; }
+  .hidden { display: none !important; }
+
+  /* profile circle, top right */
+  .profile-btn {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 11px;
+    font-family: var(--mono);
+    line-height: 24px;
+    text-align: center;
+    padding: 0;
+    align-self: center;
+    order: 11;
+    flex: none;
+  }
+
+  /* profile menu */
+  .menu-list { display: flex; flex-direction: column; margin-top: 6px; }
+  .menu-list button {
+    text-align: left;
+    padding: 12px 2px;
+    font-size: 16px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .menu-list button:hover { color: var(--ink); padding-left: 6px; transition: padding .12s; }
+  .menu-list .sub { font-size: 11px; color: var(--ink-faint); display: block; margin-top: 2px; }
+
+  /* done log */
+  .log-panel { max-width: 420px; max-height: 82vh; display: flex; flex-direction: column; }
+  .log-scroll { overflow-y: auto; margin-top: 8px; }
+  .log-day {
+    font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 14px 0 4px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .log-line { display: flex; align-items: baseline; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+  .log-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; align-self: center; }
+  .log-text { flex: 1; font-size: 14px; text-decoration: line-through; opacity: .8; word-break: break-word; }
+  .log-meta { font-size: 10.5px; color: var(--ink-faint); flex: none; }
+  .log-empty { font-size: 13px; color: var(--ink-faint); font-style: italic; padding: 20px 0; }
+
+  /* guide */
+  .guide-panel h2 { font-size: 15px; font-weight: 400; margin: 18px 0 4px; border-bottom: 1px solid var(--rule); padding-bottom: 3px; }
+  .guide-panel p { font-size: 15px; margin-bottom: 0; }
+  .guide-panel ol { font-size: 15px; color: var(--ink-faint); padding-left: 20px; margin-top: 6px; }
+  .guide-panel ol li { margin: 4px 0; }
+
+  /* gentle cap nudge */
+  .nudge {
+    padding: 10px 22px;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+
+  /* ---------- popup mode ---------- */
+  body.popup { padding: 8px; align-items: stretch; }
+  body.popup .stage { max-width: none; }
+  body.popup .card { min-height: calc(100vh - 16px); }
+  body.popup .tabs, body.popup .footer { display: none; }
+</style>
+</head>
+<body>
+
+<div class="offline" id="offline">offline, retrying…</div>
+
+<div class="stage" id="stage" style="display:none">
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title" id="cardTitle">Today</span>
+      <span class="card-date" id="cardDate"></span>
+      <span class="card-clock" id="cardClock" title="your local time"></span>
+      <span class="nav-arrows" id="navArrows">
+        <button id="prevBtn" title="previous card">&#8249;</button>
+        <button id="nextBtn" title="next card">&#8250;</button>
+      </span>
+      <button class="head-btn" id="popoutBtn" title="open small card window">&#10697;</button>
+      <button class="profile-btn" id="profileBtn" title="you"></button>
+    </div>
+    <div class="lines" id="lines"></div>
+  </div>
+  <div class="tabs" id="tabs">
+    <button data-tab="today">Today</button>
+    <button data-tab="next">Next</button>
+    <button data-tab="someday">Someday</button>
+  </div>
+  <div class="footer">
+    <button id="themeBtn"></button>
+  </div>
+</div>
+
+<!-- setup -->
+<div class="overlay hidden" id="setupOverlay">
+  <div class="panel">
+    <h1>New workspace</h1>
+    <p>Set up your cards. This runs on your own server, nobody else's. The passphrase is what opens this workspace, so make it unique.</p>
+    <label>Shared passphrase</label>
+    <input type="password" id="setupSecret" placeholder="something you both know">
+    <div class="row">
+      <div>
+        <label>Person one</label>
+        <input type="text" id="setupU1" value="Hazel">
+      </div>
+      <input type="color" id="setupC1" value="#006eb8" title="ink color">
+    </div>
+    <div class="row">
+      <div>
+        <label>Person two <span style="text-transform:none;letter-spacing:0">(leave blank if it's just you)</span></label>
+        <input type="text" id="setupU2" placeholder="their name (optional)">
+      </div>
+      <input type="color" id="setupC2" value="#8a3b2a" title="ink color">
+    </div>
+    <button class="go" id="setupGo">Begin</button>
+    <div class="err" id="setupErr"></div>
+    <button id="backToLogin" class="hidden" style="margin-top:14px;font-size:12px;font-style:italic;color:var(--ink-faint)">&#8249; back to log in</button>
+  </div>
+</div>
+
+<!-- login -->
+<div class="overlay hidden" id="loginOverlay">
+  <div class="panel">
+    <h1>Fridge</h1>
+    <p>Enter the shared passphrase.</p>
+    <input type="password" id="loginSecret" placeholder="passphrase">
+    <button class="go" id="loginGo">Open</button>
+    <div class="err" id="loginErr"></div>
+    <button id="newWorkspace" style="margin-top:14px;font-size:12px;font-style:italic;color:var(--ink-faint)">or create a new workspace &#8250;</button>
+  </div>
+</div>
+
+<!-- who are you -->
+<div class="overlay hidden" id="whoOverlay">
+  <div class="panel">
+    <h1>Who's writing?</h1>
+    <p>This device will remember you.</p>
+    <div class="who-btns" id="whoBtns"></div>
+  </div>
+</div>
+
+<!-- profile menu -->
+<div class="overlay hidden" id="menuOverlay">
+  <div class="panel">
+    <button class="close-x" id="menuClose">&times;</button>
+    <h1 id="menuTitle">You</h1>
+    <p id="menuSub"></p>
+    <div class="menu-list">
+      <button id="menuLog">Done log<span class="sub">everything ever completed, newest first</span></button>
+      <button id="menuCsv">Export CSV<span class="sub">every task with dates and who did it, opens in any spreadsheet</span></button>
+      <button id="menuBackup">Download full backup<span class="sub">one JSON file with all your data, take it anywhere</span></button>
+      <button id="menuGuide">How the cards work<span class="sub">the little guide</span></button>
+      <button id="menuSettings">Settings<span class="sub">names, ink colors, card names</span></button>
+      <button id="menuLogout">Log out this device</button>
+    </div>
+  </div>
+</div>
+
+<!-- done log -->
+<div class="overlay hidden" id="logOverlay">
+  <div class="panel log-panel">
+    <button class="close-x" id="logClose">&times;</button>
+    <h1>Done log</h1>
+    <div class="log-scroll" id="logScroll"></div>
+  </div>
+</div>
+
+<!-- guide -->
+<div class="overlay hidden" id="guideOverlay">
+  <div class="panel guide-panel">
+    <button class="close-x" id="guideClose">&times;</button>
+    <h1>How the cards work</h1>
+    <h2 id="gName1"></h2>
+    <ol>
+      <li>Each day you get a fresh card. Write the few things that matter today. Aim for under 10.</li>
+      <li>Tap the circle when something's finished. It fills in your ink.</li>
+      <li>Anything unfinished carries onto tomorrow's card automatically (marked &#8250;&#8250;).</li>
+    </ol>
+    <h2 id="gName2"></h2>
+    <p>Important tasks that need doing, just not today. Pull from here when filling your day: hover an item for "&#8594; today".</p>
+    <h2 id="gName3"></h2>
+    <p>Ideas, aspirations, and things you'd love to get to eventually. Capture them here so they stop taking up headspace.</p>
+    <button class="go" id="guideGo" style="margin-top:24px">Got it</button>
+  </div>
+</div>
+
+<!-- settings -->
+<div class="overlay hidden" id="settingsOverlay">
+  <div class="panel">
+    <button class="close-x" id="settingsClose">&times;</button>
+    <h1>Settings</h1>
+    <p>Everything here syncs for both of you.</p>
+    <label>People &amp; ink colors</label>
+    <div id="userRows"></div>
+    <label>Card names</label>
+    <div id="cardNameRows"></div>
+    <label>You are</label>
+    <div class="who-btns" id="switchWho"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const IS_POPUP = new URLSearchParams(location.search).get('popup') === '1';
+  if (IS_POPUP) document.body.classList.add('popup');
+
+  // Opened as a file instead of through the server? Explain instead of failing.
+  if (location.protocol === 'file:') {
+    document.body.innerHTML = `
+      <div class="overlay"><div class="panel">
+        <h1>Start the server first</h1>
+        <p>This page needs its little server running (that's where your cards live).</p>
+        <p>1. Open Terminal<br>2. <b>cd</b> into the paper-cards folder<br>3. Run: <b>node server.js</b><br>4. Visit <b>http://localhost:4321</b></p>
+      </div></div>`;
+    throw new Error('opened as file');
+  }
+
+  let state = null;          // {todayKey, users, cards}
+  let token = localStorage.getItem('token') || '';
+  let me = localStorage.getItem('me') || '';
+  let tab = 'today';
+  let viewDate = null;       // null = today; else a past date key
+  let es = null;
+
+  // ---------- theme ----------
+  function applyTheme() {
+    let t = localStorage.getItem('theme');
+    if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.dataset.theme = t;
+    const btn = $('themeBtn');
+    if (btn) btn.textContent = t === 'dark' ? 'light' : 'dark'; // shows what you'd switch to
+  }
+  applyTheme();
+  // small local-time clock next to the date (viewer's own timezone)
+  let lastClockDay = new Date().toDateString();
+  function tickClock() {
+    const now = new Date();
+    $('cardClock').textContent = now.toLocaleTimeString(undefined,
+      { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+    // midnight passed while the page sat open (e.g. an overnight popup):
+    // fetch fresh state so the new day's card appears without anyone acting
+    if (now.toDateString() !== lastClockDay) {
+      lastClockDay = now.toDateString();
+      if (token && state) api('/api/state').then((s) => { state = s; render(); }).catch(() => {});
+    }
+  }
+  tickClock();
+  setInterval(tickClock, 15000);
+
+  $('themeBtn').onclick = () => {
+    const cur = document.documentElement.dataset.theme;
+    localStorage.setItem('theme', cur === 'dark' ? 'light' : 'dark');
+    applyTheme();
+  };
+
+  // ---------- api ----------
+  async function api(path, body) {
+    const res = await fetch(path, {
+      method: body ? 'POST' : 'GET',
+      headers: { 'Content-Type': 'application/json', 'X-Token': token },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) throw Object.assign(new Error('api'), { status: res.status, data: await res.json().catch(() => ({})) });
+    return res.json();
+  }
+  const act = (a) => api('/api/action', a).then((s) => { state = s; render(); }).catch(handleErr);
+  function handleErr(e) {
+    if (e.status === 401) { localStorage.removeItem('token'); token = ''; boot(); }
+  }
+
+  // ---------- live updates ----------
+  function connect() {
+    if (es) es.close();
+    es = new EventSource('/api/events?token=' + encodeURIComponent(token));
+    es.onmessage = (ev) => {
+      $('offline').style.display = 'none';
+      state = JSON.parse(ev.data);
+      render();
+    };
+    es.onerror = () => { $('offline').style.display = 'block'; };
+  }
+
+  // ---------- boot ----------
+  async function boot() {
+    hideAll();
+    const { configured } = await api('/api/status');
+    $('backToLogin').classList.toggle('hidden', !configured);
+    if (!configured) return show('setupOverlay');
+    if (!token) return show('loginOverlay');
+    try {
+      state = await api('/api/state');
+    } catch (e) {
+      localStorage.removeItem('token'); token = '';
+      return show('loginOverlay');
+    }
+    if (me && !state.users[me]) { me = ''; localStorage.removeItem('me'); } // stale identity from another workspace
+    if (!me) {
+      if (!state.users.u2) { me = 'u1'; localStorage.setItem('me', 'u1'); }
+      else return showWho();
+    }
+    start();
+  }
+  function hideAll() {
+    ['setupOverlay', 'loginOverlay', 'whoOverlay', 'settingsOverlay', 'menuOverlay', 'logOverlay', 'guideOverlay']
+      .forEach((id) => $(id).classList.add('hidden'));
+  }
+  function show(id) { hideAll(); $(id).classList.remove('hidden'); }
+  function start() {
+    hideAll();
+    $('stage').style.display = '';
+    render();
+    connect();
+    if (!localStorage.getItem('guideSeen') && !IS_POPUP) showGuide();
+  }
+
+  // ---------- setup / login / who ----------
+  $('setupGo').onclick = async () => {
+    try {
+      const r = await api('/api/setup', {
+        secret: $('setupSecret').value,
+        u1name: $('setupU1').value, u1color: $('setupC1').value,
+        u2name: $('setupU2').value, u2color: $('setupC2').value,
+      });
+      token = r.token; localStorage.setItem('token', token);
+      state = r.state;
+      me = ''; localStorage.removeItem('me'); // fresh workspace, fresh identity
+      showWho();
+    } catch (e) { $('setupErr').textContent = (e.data && e.data.error) || 'something went wrong'; }
+  };
+  $('loginGo').onclick = doLogin;
+  $('loginSecret').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+  $('newWorkspace').onclick = () => { $('backToLogin').classList.remove('hidden'); show('setupOverlay'); };
+  $('backToLogin').onclick = () => show('loginOverlay');
+  async function doLogin() {
+    try {
+      const r = await api('/api/login', { secret: $('loginSecret').value });
+      token = r.token; localStorage.setItem('token', token);
+      state = r.state;
+      if (me && !state.users[me]) { me = ''; localStorage.removeItem('me'); }
+      if (!me) return showWho();
+      start();
+    } catch (e) { $('loginErr').textContent = 'wrong passphrase'; }
+  }
+  function showWho() {
+    if (!state.users.u2) { me = 'u1'; localStorage.setItem('me', 'u1'); return start(); }
+    show('whoOverlay');
+    const box = $('whoBtns');
+    box.innerHTML = '';
+    for (const slot of ['u1', 'u2']) {
+      const u = state.users[slot];
+      if (!u) continue;
+      const b = document.createElement('button');
+      b.textContent = u.name;
+      b.style.color = u.color;
+      b.style.borderColor = u.color;
+      b.onclick = () => { me = slot; localStorage.setItem('me', slot); start(); };
+      box.appendChild(b);
+    }
+  }
+
+  // ---------- profile menu ----------
+  $('profileBtn').onclick = () => {
+    const u = state.users[me] || state.users.u1;
+    $('menuTitle').textContent = u.name;
+    $('menuSub').textContent = state.users.u2 ? 'your shared cards' : 'your cards';
+    show('menuOverlay'); $('stage').style.display = '';
+  };
+  $('menuClose').onclick = () => hideAll();
+  $('menuLog').onclick = showLog;
+  $('menuCsv').onclick = () => { location.href = '/api/export.csv?token=' + encodeURIComponent(token); };
+  $('menuBackup').onclick = () => { location.href = '/api/export.json?token=' + encodeURIComponent(token); };
+  $('menuGuide').onclick = showGuide;
+  $('menuSettings').onclick = () => { buildSettings(); show('settingsOverlay'); $('stage').style.display = ''; };
+  $('menuLogout').onclick = () => {
+    localStorage.removeItem('token'); localStorage.removeItem('me');
+    token = ''; me = '';
+    location.reload();
+  };
+
+  // ---------- done log ----------
+  async function showLog() {
+    show('logOverlay'); $('stage').style.display = '';
+    const box = $('logScroll');
+    box.innerHTML = '<div class="log-empty">loading…</div>';
+    try {
+      const { items } = await api('/api/history');
+      box.innerHTML = '';
+      if (!items.length) {
+        box.innerHTML = '<div class="log-empty">Nothing finished yet. Go check something off.</div>';
+        return;
+      }
+      let lastDay = '';
+      for (const it of items) {
+        const d = new Date(it.doneAt);
+        const dayKey = d.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+        if (dayKey !== lastDay) {
+          lastDay = dayKey;
+          const h = document.createElement('div');
+          h.className = 'log-day';
+          h.textContent = dayKey;
+          box.appendChild(h);
+        }
+        const author = state.users[it.author] || state.users.u1;
+        const checker = state.users[it.doneBy] || author;
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        const dot = document.createElement('span');
+        dot.className = 'log-dot';
+        dot.style.background = checker.color;
+        dot.title = 'checked by ' + checker.name;
+        const txt = document.createElement('span');
+        txt.className = 'log-text';
+        txt.textContent = it.text;
+        txt.style.color = author.color;
+        const meta = document.createElement('span');
+        meta.className = 'log-meta';
+        meta.textContent = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+        meta.title = 'written by ' + author.name + ' · checked by ' + checker.name;
+        line.append(dot, txt, meta);
+        box.appendChild(line);
+      }
+    } catch (e) {
+      box.innerHTML = '<div class="log-empty">couldn’t load the log</div>';
+    }
+  }
+  $('logClose').onclick = () => hideAll();
+
+  // ---------- guide ----------
+  function showGuide() {
+    const n = state.cardNames;
+    $('gName1').textContent = n.today + ': the daily card';
+    $('gName2').textContent = n.next + ': on deck';
+    $('gName3').textContent = n.someday + ': the long list';
+    show('guideOverlay'); $('stage').style.display = '';
+  }
+  $('guideClose').onclick = $('guideGo').onclick = () => {
+    localStorage.setItem('guideSeen', '1');
+    hideAll();
+  };
+
+  // ---------- settings ----------
+  $('settingsClose').onclick = () => hideAll();
+  function buildSettings() {
+    const rows = $('userRows');
+    rows.innerHTML = '';
+    for (const slot of ['u1', 'u2']) {
+      const u = state.users[slot];
+      if (!u) continue;
+      const div = document.createElement('div');
+      div.className = 'settings-row';
+      const name = document.createElement('input');
+      name.type = 'text'; name.value = u.name;
+      name.onchange = () => act({ type: 'setUser', slot, name: name.value });
+      const color = document.createElement('input');
+      color.type = 'color'; color.value = u.color;
+      color.onchange = () => act({ type: 'setUser', slot, color: color.value });
+      div.append(name, color);
+      rows.appendChild(div);
+    }
+    if (!state.users.u2) {
+      const b = document.createElement('button');
+      b.className = 'go';
+      b.textContent = 'Add a second person';
+      b.style.marginTop = '8px';
+      b.onclick = () => {
+        const name = prompt('Their name?');
+        if (name && name.trim()) act({ type: 'addPartner', name: name.trim() }).then?.(buildSettings);
+        setTimeout(buildSettings, 400);
+      };
+      rows.appendChild(b);
+    }
+    const cn = $('cardNameRows');
+    cn.innerHTML = '';
+    for (const tab of ['today', 'next', 'someday']) {
+      const div = document.createElement('div');
+      div.className = 'settings-row';
+      const name = document.createElement('input');
+      name.type = 'text'; name.value = state.cardNames[tab]; name.maxLength = 20;
+      name.onchange = () => act({ type: 'setCardName', tab, name: name.value });
+      div.appendChild(name);
+      cn.appendChild(div);
+    }
+    const sw = $('switchWho');
+    sw.innerHTML = '';
+    for (const slot of ['u1', 'u2']) {
+      const u = state.users[slot];
+      if (!u) continue;
+      const b = document.createElement('button');
+      b.textContent = u.name + (me === slot ? '  ✓' : '');
+      b.style.color = u.color; b.style.borderColor = u.color;
+      b.style.opacity = me === slot ? 1 : .55;
+      b.onclick = () => { me = slot; localStorage.setItem('me', slot); buildSettings(); render(); };
+      sw.appendChild(b);
+    }
+  }
+
+  // ---------- popup ----------
+  $('popoutBtn').onclick = () => {
+    window.open(location.origin + '/?popup=1', 'paperCard',
+      'width=380,height=620,menubar=no,toolbar=no,location=no,status=no');
+  };
+  if (IS_POPUP) $('popoutBtn').style.display = 'none';
+
+  // ---------- tabs & date nav ----------
+  $('tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-tab]');
+    if (!b) return;
+    tab = b.dataset.tab;
+    viewDate = null;
+    render();
+  });
+  $('prevBtn').onclick = () => stepDate(-1);
+  $('nextBtn').onclick = () => stepDate(1);
+  function todayKeys() { return Object.keys(state.cards.today).sort(); }
+  function stepDate(dir) {
+    const keys = todayKeys();
+    const cur = viewDate || state.todayKey;
+    const i = keys.indexOf(cur) + dir;
+    if (i < 0 || i >= keys.length) return;
+    viewDate = keys[i] === state.todayKey ? null : keys[i];
+    render();
+  }
+
+  // ---------- render ----------
+  function prettyDate(key) {
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+  function currentCard() {
+    if (tab === 'today') return state.cards.today[viewDate || state.todayKey] || { items: [] };
+    return state.cards[tab];
+  }
+
+  let pendingRender = false;
+  function render() {
+    if (!state) return;
+    // someone is mid-edit on a task: don't wipe their typing.
+    // Defer this render until they finish (flushed in the blur handler).
+    const ae = document.activeElement;
+    if (ae && ae.classList && ae.classList.contains('txt') && ae.isContentEditable) {
+      pendingRender = true;
+      return;
+    }
+    pendingRender = false;
+    // header
+    document.querySelector('.card').dataset.cardtab = tab;
+    $('cardTitle').textContent = state.cardNames[tab];
+    for (const b of $('tabs').querySelectorAll('button')) b.textContent = state.cardNames[b.dataset.tab];
+    const meU = state.users[me] || state.users.u1;
+    $('profileBtn').style.background = meU.color;
+    $('profileBtn').textContent = (meU.name || '?').trim().charAt(0).toUpperCase();
+    $('profileBtn').title = meU.name;
+    const readOnly = tab === 'today' && viewDate && viewDate !== state.todayKey;
+    $('cardDate').textContent = tab === 'today' ? prettyDate(viewDate || state.todayKey) : '';
+    $('navArrows').style.display = tab === 'today' ? '' : 'none';
+    if (tab === 'today') {
+      const keys = todayKeys();
+      const cur = viewDate || state.todayKey;
+      $('prevBtn').disabled = keys.indexOf(cur) <= 0;
+      $('nextBtn').disabled = cur === state.todayKey;
+    }
+    // tabs
+    for (const b of $('tabs').querySelectorAll('button')) b.classList.toggle('active', b.dataset.tab === tab);
+
+    // preserve add-input state across renders
+    const oldInput = document.querySelector('.add-line input');
+    const draft = oldInput ? oldInput.value : '';
+    const hadFocus = oldInput && document.activeElement === oldInput;
+
+    const box = $('lines');
+    box.innerHTML = '';
+    const card = currentCard();
+    const open = card.items.filter((i) => !i.done);
+    const done = card.items.filter((i) => i.done);
+
+    for (const it of open) box.appendChild(lineEl(it, readOnly));
+
+    if (!readOnly) {
+      const add = document.createElement('div');
+      add.className = 'line add-line';
+      const circ = document.createElement('button');
+      circ.className = 'circle';
+      const inp = document.createElement('input');
+      inp.placeholder = 'write it down…';
+      inp.value = draft;
+      inp.maxLength = 500;
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && inp.value.trim()) {
+          const text = inp.value;
+          inp.value = '';
+          act({ type: 'add', tab, dateKey: tab === 'today' ? state.todayKey : undefined, text, user: me });
+        }
+      });
+      circ.onclick = () => inp.focus();
+      add.append(circ, inp);
+      box.appendChild(add);
+      if (hadFocus) inp.focus();
+
+      // gentle reminder — a focused card is a finished card (Later is allowed to be long)
+      if (open.length >= 10 && tab !== 'someday') {
+        const n = document.createElement('div');
+        n.className = 'nudge';
+        const target = tab === 'today' ? state.cardNames.next : state.cardNames.someday;
+        n.textContent = 'This card is getting full. Keeping tasks focused helps you finish them. Maybe move a few to ' + target + '?';
+        box.appendChild(n);
+      }
+    }
+
+    // empty ruled lines for paper feel (10-line card, like Analog)
+    const filler = Math.max(0, 10 - open.length - done.length - 1);
+    for (let i = 0; i < filler; i++) {
+      const l = document.createElement('div');
+      l.className = 'line';
+      const ghost = document.createElement('span');
+      ghost.className = 'circle ghost';
+      l.appendChild(ghost);
+      box.appendChild(l);
+    }
+
+    if (done.length) {
+      const div = document.createElement('div');
+      div.className = 'done-divider';
+      div.innerHTML = '<span>done</span>';
+      if (!readOnly) {
+        const clear = document.createElement('button');
+        clear.textContent = 'clear';
+        clear.title = 'archive finished items (kept in archive.json, never deleted)';
+        clear.onclick = () => act({ type: 'clearDone', tab, dateKey: tab === 'today' ? state.todayKey : undefined });
+        div.appendChild(clear);
+      }
+      box.appendChild(div);
+      for (const it of done) box.appendChild(lineEl(it, readOnly));
+    }
+  }
+
+  function lineEl(it, readOnly) {
+    const line = document.createElement('div');
+    line.className = 'line' + (it.done ? ' done' : '');
+    const author = state.users[it.author] || state.users.u1;
+    const checker = it.doneBy ? (state.users[it.doneBy] || author) : null;
+
+    const circ = document.createElement('button');
+    circ.className = 'circle' + (it.done ? ' done' : '');
+    if (it.done && checker) circ.style.background = checker.color;
+    circ.title = it.done && checker ? 'checked by ' + checker.name : 'mark done';
+    if (!readOnly) circ.onclick = () =>
+      act({ type: 'toggle', tab, dateKey: tab === 'today' ? (viewDate || state.todayKey) : undefined, id: it.id, user: me });
+    else circ.disabled = true;
+
+    const txt = document.createElement('span');
+    txt.className = 'txt' + (it.carried ? ' carried' : '');
+    txt.textContent = it.text;
+    txt.style.color = author.color;
+    if (it.done && checker) txt.style.textDecorationColor = checker.color;
+    if (!readOnly && !it.done) {
+      txt.title = 'written by ' + author.name + ', click to edit';
+      txt.contentEditable = 'plaintext-only';
+      txt.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); txt.blur(); } });
+      txt.addEventListener('blur', () => {
+        const t = txt.textContent.trim();
+        if (t && t !== it.text) {
+          pendingRender = false; // act() re-renders with the fresh state anyway
+          act({ type: 'edit', tab, dateKey: tab === 'today' ? state.todayKey : undefined, id: it.id, text: t });
+        } else {
+          txt.textContent = it.text;
+          if (pendingRender) render(); // flush the update we held back during editing
+        }
+      });
+    } else {
+      txt.title = 'written by ' + author.name + (checker ? ' · checked by ' + checker.name : '');
+    }
+
+    const actions = document.createElement('span');
+    actions.className = 'line-actions';
+    if (!readOnly) {
+      if (tab !== 'today' && !it.done) {
+        const mv = document.createElement('button');
+        mv.textContent = '→ today';
+        mv.title = 'move to today’s card';
+        mv.onclick = () => act({ type: 'move', fromTab: tab, toTab: 'today', id: it.id });
+        actions.appendChild(mv);
+      }
+      const del = document.createElement('button');
+      del.textContent = '×';
+      del.title = 'remove (kept in archive, never deleted)';
+      del.onclick = () =>
+        act({ type: 'remove', tab, dateKey: tab === 'today' ? (viewDate || state.todayKey) : undefined, id: it.id });
+      actions.appendChild(del);
+    }
+
+    line.append(circ, txt, actions);
+    return line;
+  }
+
+  boot().catch(() => { $('offline').style.display = 'block'; setTimeout(boot, 2000); });
+})();
+</script>
+</body>
+</html>
